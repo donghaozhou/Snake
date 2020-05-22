@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="descript" content="只限PC端浏览, 本文档中未使用最新语法, 如果出现黑屏则说明浏览器器版本过低, 需要换个浏览器或升级">
+    <title>贪吃蛇游戏</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #descript {
+            width: 400px;
+            margin: 10px auto;
+            text-align: center;
+            font-weight: bold;
+            font-size: 20px;
+            color: #000;
+        }
+
+        #canvas {
+            display: block;
+            margin: 0 auto;
+        }
+
+        #fraction {
+            text-align: center;
+            font-weight: bold;
+            font-size: 20px;
+            margin-top: 20px;
+        }
+
+        noscript {
+            font-weight: bold;
+            font-size: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <noscript>您的浏览器不支持 Javascript</noscript>
+    <canvas id="canvas" width="400" height="400"></canvas>
+    <div id="fraction">0</div>
+    <script>
+        var Game = (function () {
+            // 私有变量, 外部不能访问
+            var requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.msRequestAnimationFrame;
+            var cancelAnimationFrame = window.cancelAnimationFrame || window.webkitCancelAnimationFrame;
+            var timer;
+            var canvas = document.getElementById('canvas');
+            var $2d = canvas.getContext('2d');
+            var table = [];
+            var snakeLength = 6;
+            var food = {};
+            var fraction = 0;
+            var isExtend = false;
+            var isGameOver = false;
+            var dir = 'right';
+            var interval = 200;
+
+            // 初始化
+            function initialize() {
+                $2d.scale(20, 20);
+                $2d.fillStyle = 'black';
+                $2d.fillRect(0, 0, canvas.width, canvas.height);
+                for (var i = 0; i < 20; i++) {
+                    table.push(new Array(20).fill(0));
+                }
+                for (var i = 2; i <= snakeLength; i++) {
+                    table[0][i] = i;
+                }
+                createFood();
+                startAnimation();
+            }
+
+            // 开始动画
+            function startAnimation(time) {
+                if (time >= interval) {
+                    interval += 200;
+                    switch (dir) {
+                        case 'left':
+                            draw(-1, 0);
+                            break;
+                        case 'right':
+                            draw(1, 0);
+                            break;
+                        case 'top':
+                            draw(0, -1);
+                            break;
+                        case 'bottom':
+                            draw(0, 1);
+                            break;
+                    }
+                }
+                timer = requestAnimationFrame(startAnimation);
+            }
+
+            // 键盘控制方向
+            window.addEventListener('keydown', function() {
+                switch (event.keyCode) {
+                    case 37:
+                        if (dir !== 'right') {
+                            dir = 'left';
+                            draw(-1, 0);
+                        }
+                        break;
+                    case 39:
+                        if (dir !== 'left') {
+                            dir = 'right';
+                            draw(1, 0);
+                        }
+                        break;
+                    case 38:
+                        if (dir !== 'bottom') {
+                            dir = 'top';
+                            draw(0, -1);
+                        }
+                        break;
+                    case 40:
+                        if (dir !== 'top') {
+                            dir = 'bottom';
+                            draw(0, 1);
+                        }
+                        break;
+                }
+            });
+
+            // 窗口失去焦点时暂停动画
+            window.onblur = function () {
+                cancelAnimationFrame(timer);
+            }
+
+            // 窗口获得焦点时开启动画
+            window.onfocus = function () {
+                startAnimation();
+            }
+
+            // 获得蛇头的位置和值
+            function getHead() {
+                var arr = [];
+                table.flat().forEach(function(item) {
+                    if (item > 1) {
+                        arr.push(item);
+                    }
+                });
+                var max = Math.max.apply(null, arr);
+                for (var y = 0; y < table.length; y++) {
+                    for (var x = 0; x < table[y].length; x++) {
+                        if (table[y][x] === max) {
+                            return { x: x, y: y, max: max }
+                        }
+                    }
+                }
+            }
+
+            // 获取蛇尾的位置
+            function getTail() {
+                var arr = [];
+                table.flat().forEach(function(item) {
+                    if (item > 1) {
+                        arr.push(item);
+                    }
+                });
+                var min = Math.min.apply(null, arr);
+                for (var y = 0; y < table.length; y++) {
+                    for (var x = 0; x < table[y].length; x++) {
+                        if (table[y][x] === min) {
+                            return { x: x, y: y }
+                        }
+                    }
+                }
+            }
+            
+            // 清除蛇尾
+            function clearTail() {
+                var tail = getTail();
+                table[tail.y][tail.x] = 0;
+            }
+
+            // 增加蛇头
+            function addHead(x, y) {
+                var head = getHead();
+                var xPos;
+                var yPos;
+                if (x) {
+                    if ((head.x + x) > 19) {
+                        xPos = 0;
+                    } else if ((head.x + x) < 0) {
+                        xPos = 19;
+                    } else {
+                        xPos = head.x + x;
+                    }
+                    // 如果下一步的位置上不为空或食物, 游戏结束
+                    if (table[head.y][xPos] === 0 || table[head.y][xPos] === 1) {
+                        table[head.y][xPos] = head.max + 1;
+                    } else {
+                        isGameOver = true;
+                    }
+                } else if(y) {
+                    if ((head.y + y) > 19) {
+                        yPos = 0;
+                    } else if ((head.y + y) < 0) {
+                        yPos = 19;
+                    } else {
+                        yPos = head.y + y;
+                    }
+                    // 如果下一步的位置上不为空或食物, 游戏结束
+                    if (table[yPos][head.x] === 0 || table[yPos][head.x] === 1) {
+                        table[yPos][head.x] = head.max + 1;
+                    } else {
+                        isGameOver = true;
+                    }
+                }
+                // 如果蛇头的位置和食物的位置重叠, 获得分数, 并重新创建食物
+                if ((head.y === food.y && food.x === xPos) || (yPos === food.y && food.x === head.x)) {
+                    document.getElementById('fraction').innerText = fraction += 100;
+                    createFood();
+                    // 每获得500分长度加一
+                    if (fraction % 500 === 0) {
+                        isExtend = true;
+                    }
+                }
+            }
+
+            // 创建食物
+            function createFood() {
+                var x = parseInt(Math.random() * 20);
+                var y = parseInt(Math.random() * 20);
+                // 如果当前位置上为空则创建食物, 否则重新随机一个位置
+                if (table[y][x] === 0) {
+                    table[y][x] = 1;
+                    food.x = x;
+                    food.y = y;
+                } else {
+                    createFood();
+                }
+            }
+
+            // 绘制
+            function draw(x, y) {
+                addHead(x, y);
+                if (!isExtend) {
+                    clearTail();
+                }
+                isExtend = false;
+                $2d.fillStyle = 'black';
+                $2d.fillRect(0, 0, canvas.width, canvas.height);
+                table.forEach(function(row, y) {
+                    row.forEach(function(item, x) {
+                        if (item > 1) {
+                            // 绘制蛇
+                            $2d.fillStyle = 'red';
+                            $2d.fillRect(x, y, 1, 1);
+                        } else if (item === 1) {
+                            // 绘制食物
+                            $2d.fillStyle = 'green';
+                            $2d.fillRect(x, y, 1, 1);
+                        }
+                    });
+                });
+                if (isGameOver) {
+                    gameOver();
+                }
+            }
+
+            // 游戏结束
+            function gameOver() {
+                cancelAnimationFrame(timer);
+                alert('游戏结束, 您的最终得分是' + fraction + '分');
+                location.reload();
+            }
+
+            // 外部访问内部的唯一入口
+            return {
+                initialize: initialize
+            }
+        })();
+
+        Game.initialize();
+    </script>
+</body>
+
+</html>

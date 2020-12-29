@@ -118,7 +118,7 @@
                 var size = this.size;
                 this.context.fillStyle = "black";
                 this.context.fillRect(0, 0, this.width, this.height);
-                this.context.scale(parseInt(w / (w / size)), parseInt(h / (h / size)));
+                this.context.scale(w / (w / size), h / (h / size));
             }
 
             /**

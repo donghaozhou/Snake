@@ -96,16 +96,17 @@
             * 开始动画
             */
             this.startAnimation = function () {
-                setInterval(() => {
-                    if (this.dir == "left") {
-                        this.moveLeft();
-                    } else if (this.dir == "right") {
-                        this.moveRight();
-                    } else if (this.dir == "up") {
-                        this.moveUp();
-                    } else if (this.dir == "down") {
-                        this.moveDown();
-                    }
+                if (this.dir == "left") {
+                    this.moveLeft();
+                } else if (this.dir == "right") {
+                    this.moveRight();
+                } else if (this.dir == "up") {
+                    this.moveUp();
+                } else if (this.dir == "down") {
+                    this.moveDown();
+                }
+                setTimeout(() => {
+                    this.startAnimation();
                 }, this.interval);
             }
 

@@ -277,6 +277,7 @@
             this.reload = function () {
                 this.length = 5;
                 this.score = 0;
+                document.getElementById("score").innerText = this.score;
                 this.createTable();
                 this.createFood();
             }

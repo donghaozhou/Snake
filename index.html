@@ -297,15 +297,12 @@
                         } else if (item == "food") {
                             context.fillStyle = "green";
                             context.fillRect(x, y, 1, 1);
-                        } else {
-                            context.fillStyle = "black";
-                            context.fillRect(x, y, 1, 1);
                         }
                     });
                 });
                 if (table.flat().indexOf("food") === -1) {
                     this.createFood();
-                    document.getElementById("score").innerText = this.score += 100;;
+                    document.getElementById("score").innerText = this.score += 100;
                     if (this.score % 500 === 0) {
                         isExtend = true;
                     }
